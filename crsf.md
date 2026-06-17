@@ -406,6 +406,11 @@ Frame type used to transmit temperature telemetry data from the vehicle to the t
     int16_t     temperature[];        // up to 20 temperature values in deci-degree (tenths of a degree) Celsius (e.g., 250 = 25.0°C, -50 = -5.0°C)
 ```
 
+Fixed temperature source IDs:
+
+- 0xEE: TX device temperature
+- 0xEC: RX device temperature
+
 ## 0x0E Voltages (or "Voltage Group")
 
 Used to transmit voltage telemetry from the craft to the transmitter. Can be used to report battery cell voltages, or a group of associated voltages from a single source.
