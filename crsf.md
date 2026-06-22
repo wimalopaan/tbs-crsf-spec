@@ -28,14 +28,14 @@
   - [0x09 Barometric Altitude & Vertical Speed](#0x09-barometric-altitude--vertical-speed)
   - [0x0A Airspeed](#0x0a-airspeed)
   - [0x0B Heartbeat](#0x0b-heartbeat)
-  - [0x0C RPM](#0x0C-rpm)
-  - [0x0D TEMP](#0x0D-temp)
-  - [0x0E Voltages](#0x0E-voltages-or-voltage-group)
+  - [0x0C RPM](#0x0c-rpm)
+  - [0x0D TEMP](#0x0d-temp)
+  - [0x0E Voltages](#0x0e-voltages-or-voltage-group)
   - [0x0F Discontinued](#0x0f-discontinued)
   - [0x10 VTX Telemetry](#0x10-vtx-telemetry)
   - [0x11 Barometer](#0x11-barometer)
   - [0x12 Magnetometer](#0x12-magnetometer)
-  - [0x13 Accel/Gyro](#0x13-accel-gyro)
+  - [0x13 Accel Gyro](#0x13-accel-gyro)
   - [0x14 Link Statistics](#0x14-link-statistics)
   - [0x15 Link Statistics Repeater](#0x15-link-statistics-repeater)
   - [0x16 RC Channels Packed Payload](#0x16-rc-channels-packed-payload)
@@ -75,6 +75,7 @@
     - [0x32.0x0A General](#0x320x0a-general)
     - [0x32.0x10 Crossfire](#0x320x10-crossfire)
     - [0x32.0x12 Reserved](#0x320x12-reserved)
+    - [0x32.0x13 RC Over WiFi (Game Mode)](#0x320x13-rc-over-wifi-game-mode)
     - [0x32.0x20 Flow Control Frame](#0x320x20-flow-control-frame)
     - [0x32.0x22 Screen Command](#0x320x22-screen-command)
       - [0x32.0x22.0x01 Pop-up Message Start](#0x320x220x01-pop-up-message-start)
@@ -126,9 +127,9 @@ This document serves as a public "single source of truth", maintained by TBS, do
 
 ## Single-Wire Half-Duplex UART
 
-This configuration is usually used between RC and TX. The RC acts as master in this case and TX responds with telemetry if it’s synchronized to the RC frames sent by the RC. The RC must send only one frame with pre-configured or negotiated frequency and must switch the line into the high-impedance mode and wait for a response from TX.
+This configuration is usually used between RC and TX. The RC acts as master in this case and TX responds with telemetry if it's synchronized to the RC frames sent by the RC. The RC must send only one frame with pre-configured or negotiated frequency and must switch the line into the high-impedance mode and wait for a response from TX.
 
-The UART by default runs at **400 kbaud 8N1** (inverted or non-inverted) at **3.3V** level, but it also supports 115.2 kbaud, and higher (1Mbaud, 2Mbaud) depending on hardware (see [0x70 CRSF Protocol Speed Proposal](#0x320x0a-general)). It is recommended that TX modules are configured to the same baud rate, or that they latch on to the correct baudrate automatically. The maximum frame-rate must be chosen depending on the baudrate for be able for RC and TX send frames with maximum length (64 bytes) in one frame.
+The UART by default runs at **400 kbaud 8N1** (inverted or non-inverted) at **3.3V** level, but it also supports 115.2 kbaud, and higher (1Mbaud, 2Mbaud) depending on hardware (see [0x70 CRSF Protocol Speed Proposal](#0x320x0a-general)). It is recommended that TX modules are configured to the same baud rate, or that they latch on to the correct baudrate automatically. The maximum frame rate must be chosen according to the baudrate, so that both the RC and TX are able to send maximum-length frames (64 bytes) within a single frame period.
 
 ## Dual-Wire Full-Duplex UART
 
@@ -136,7 +137,7 @@ This configuration is usually used on the flying platform side. Two devices are 
 
 ## Multi-master I2C (BST)
 
-(EOL) BST is a multi master I2C bus. It runs at 3.3V level at 100kHz using 7 bit addresses. Device addresses already contain the R/W bit. Which means the list is each device’s write address and read address is Device addresses + 1. Each device supporting BST should release SDA in any case to not block the bus. It’s recommended to monitor the heartbeat message and reset the interface if there is a timeout of 1.5s. It’s required to support general call frames which will be called broadcast frames within this document.
+(EOL) BST is a multi master I2C bus. It runs at 3.3V level at 100kHz using 7 bit addresses. Device addresses already contain the R/W bit. Which means the list is each device's write address and read address is Device addresses + 1. Each device supporting BST should release SDA in any case to not block the bus. It's recommended to monitor the heartbeat message and reset the interface if there is a timeout of 1.5s. It's required to support general call frames which will be called broadcast frames within this document.
 
 # Frame Construction
 
@@ -177,7 +178,7 @@ And vice-versa: if a frame has some optional fields, sometimes this fields might
 
 # Routing
 
-If a device has more than one CRSF port it’s required to forward all received frames to the other ports. CRSF works as a star network with fixed address tables on each node. It’s forbidden to use any loop connection as it would keep forwarding the same message endlessly.
+If a device has more than one CRSF port it's required to forward all received frames to the other ports. CRSF works as a star network with fixed address tables on each node. It's forbidden to use any loop connection as it would keep forwarding the same message endlessly.
 
 # CRC
 
@@ -221,10 +222,11 @@ uint8_t crc8(const uint8_t * ptr, uint8_t len)
 - **0x0E** Cloud
 - **0x10** USB Device
 - **0x12** Bluetooth Module/WiFi
-- **0x13** Wi-Fi receiver (mobile game/simulator)
+- **0x13** WiFi receiver (mobile game/simulator)
 - **0x14** Video Receiver
 - _0x20-0x7F Dynamic address space for NAT_
 - **0x80** OSD / TBS CORE PNP PRO
+- _0x8A Reserved_
 - **0x90** ESC 1
 - **0x91** ESC 2
 - **0x92** ESC 3
@@ -233,7 +235,6 @@ uint8_t crc8(const uint8_t * ptr, uint8_t len)
 - **0x95** ESC 6
 - **0x96** ESC 7
 - **0x97** ESC 8
-- _0x8A Reserved_
 - _0xB0 Crossfire reserved_
 - _0xB2 Crossfire reserved_
 - **0xC0** Voltage/ Current Sensor / PNP PRO digital current sensor
@@ -290,11 +291,11 @@ This frame is needed for synchronization with the ublox time pulse. The maximum 
     int16_t h_speed_acc;    // Horizontal Speed accuracy cm/sec
     int16_t track_acc;      // Heading accuracy in degrees scaled with 1e-1 degrees times 10)
     int16_t alt_ellipsoid;  // Meters Height above GPS Ellipsoid (not MSL)
-    int16_t h_acc;          // horizontal accuracy in cm
-    int16_t v_acc;          // vertical accuracy in cm
+    int16_t h_acc;          // Horizontal accuracy in cm
+    int16_t v_acc;          // Vertical accuracy in cm
     uint8_t reserved;
-    uint8_t hDOP;           // Horizontal dilution of precision,Dimensionless in nits of.1.
-    uint8_t vDOP;           // vertical dilution of precision, Dimensionless in nits of .1.
+    uint8_t hDOP;           // Horizontal dilution of precision. Dimensionless in nits of 0.1
+    uint8_t vDOP;           // Vertical dilution of precision. Dimensionless in nits of 0.1
 ```
 
 ## 0x07 Variometer Sensor
@@ -362,7 +363,7 @@ vertical speed is represented in cm/s with logarithmic scale and (un)packed by f
 const int   Kl = 100;       // linearity constant;
 const float Kr = .026;      // range constant;
 
-int8_t  get_vertical_speed_packed (int16 vertical_speed_cm_s){
+int8_t  get_vertical_speed_packed (int16_t vertical_speed_cm_s){
     return (int8_t)(log(abs(vertical_speed_cm_s)/Kl + 1)/Kr)
                                  * sign(vertical_speed_cm_s);
 }
@@ -683,7 +684,7 @@ sequenceDiagram
     Host->>Device: (0x2C) Request: Read Param 2, Chunk 2
     Device->>Host: (0x2B) Reply: Param 2, Chunks remaining: 0
 
-    note over Host,Device: Host received last chunk so it can ready<br/>any other parameter starting over with chunk 0
+    note over Host,Device: Host received last chunk so it can read<br/>any other parameter starting over with chunk 0
     Host->>Device: (0x2C) Request: Read Param 3, Chunk 0
     Device->>Host: (0x2B) Reply: Param 3, Chunks remaining: 0
 ```
@@ -827,7 +828,7 @@ Folder is used to make a better structure of the parameters. Every parameter has
 
 ### INFO
 
-Value is a null terminated string. Same as STRING, except that INFO entry cannot be modified and doesn’t include maximum length.
+Value is a null terminated string. Same as STRING, except that INFO entry cannot be modified and doesn't include maximum length.
 
 **Info payload**
 
@@ -845,7 +846,7 @@ With the type command the host is able to run/execute a function on a device. Th
 
 The device default state is READY. Once the host wants to execute the function it writes the parameter with status START. Depending on the function the device switches to PROGRESS, CONFIRMATION_NEEDED or READY.
 
-When the device sends CONFIRMATION_NEEDED the host will show a confirmation box with “confirm” or “cancel” selection. If the user selects one the selection will be transmitted to the device and the function continues to execute. With the field Info the device can send additional information to the host.
+When the device sends CONFIRMATION_NEEDED the host will show a confirmation box with "confirm" or "cancel" selection. If the user selects one the selection will be transmitted to the device and the function continues to execute. With the field Info the device can send additional information to the host.
 
 If the host sends status POLL, it will force the device to send an updated status of the 0x2B Parameter settings (entry).
 
@@ -885,7 +886,7 @@ sequenceDiagram
     Device->>Host: Send Parameter: COMMAND, Name = Bind, Status = PROGRESS, Info = Binding (0x2B)
 
     Host->>Device: (optional) Status = POLL (0x2D)
-    note over Host: it’s a must to send POLL from host if we wanna get the <br/>latest parameter info.For example: while getting parameter “bind”<br/>from TX (0xEE) is a must,otherwise we don’t know the RX firmware<br/>updating info
+    note over Host: it's a must to send POLL from host if we wanna get the <br/>latest parameter info.For example: while getting parameter "bind"<br/>from TX (0xEE) is a must,otherwise we don't know the RX firmware<br/>updating info
     Host->>Device: (optional) Status = POLL (0x2D)
     Host->>Device: (optional) Status = POLL (0x2D)
 
@@ -895,14 +896,14 @@ sequenceDiagram
 
 ## 0x2C Parameter Settings (Read)
 
-Request a specific parameter. This command is for re-request a parameter/chunk that didn’t make it through the link.
+Request a specific parameter. This command is for re-request a parameter/chunk that didn't make it through the link.
 
 ```cpp
     uint8_t Parameter_number;
     uint8_t Parameter_chunk_number; // Chunk number to request, starts with 0
 ```
 
-### 0x2D Parameter value (write)
+## 0x2D Parameter value (write)
 
 This command is used to write a new value to a parameter. The host sends a `0x2D` frame containing the parameter number and the new data payload. The destination node **must** answer to confirm the write; however, the response format depends on the parameter's type.
 
@@ -1011,7 +1012,7 @@ unsigned char command_crc8tab[256] = {
 - 0x05 Power up from PitMode (bare command)
 - 0x06 Set Dynamic Power (15/05/2020 in EVO, PRO32 HV, PRO32 NANO)
     NOTE: Needs to be sent at 1Hz. If not received for 3s the VTX
-          will revert to “0x08 Set Power” power setting
+          will revert to "0x08 Set Power" power setting
   - uint8_t Power (dBm) (0dBm can be considered as PitMode Power)
 - 0x08 Set Power
   - uint8_t Power (dBm) (0dBm can be considered as PitMode Power)
@@ -1073,11 +1074,25 @@ unsigned char command_crc8tab[256] = {
   - uint8_t Model Number
 - 0x08 reserved
 - 0x09 reserved
-- 0x0A Enable RX telemerty
+- 0x0A Enable RX telemetry
 - 0x0B Disable RX telemetry
 ```
 
 ### 0x32.0x12 Reserved
+
+### 0x32.0x13 RC Over WiFi (Game Mode)
+
+RC-over-WiFi is a special mode when RC frames ([0x16](#0x16-rc-channels-packed-payload)/[0x17](#0x17-subset-rc-channels-packed)) instead of transmitting are sent to the WiFi module to be transmitted over WiFi.
+
+```cpp
+- 0x01 Enable RC over WiFi
+- 0x02 Disable RC over WiFi
+```
+
+Examples:
+
+- `0xC8 0x07 0x32 0xEE 0x13 0x13 0x01 0x66 0x06`
+- `0xC8 0x07 0x32 0xEE 0x13 0x13 0x02 0x12 0x8E`
 
 ### 0x32.0x20 Flow Control Frame
 
@@ -1136,7 +1151,7 @@ For all device which has LCD Screen
 
 ## 0x34 Logging
 
-this frame has simple (short) header. Used for degug purpose only.
+this frame has simple (short) header. Used for debug purposes only.
 
 ```cpp
     uint16_t logtype;
@@ -1157,7 +1172,7 @@ this frame has simple (short) header. Used for degug purpose only.
 
 ### 0x3A.0x10 Timing Correction (CRSF Shot)
 
-aka “RC-sync”; aka “timing correction frame” (in EdgeTX).
+aka "RC-sync"; aka "timing correction frame" (in EdgeTX).
 
 ```cpp
     uint32_t    update_interval;    // LSB = 100ns
@@ -1165,7 +1180,7 @@ aka “RC-sync”; aka “timing correction frame” (in EdgeTX).
                                     // negative = late.
 ```
 
-Despite that the values are in 100ns resolution, at least in EdgeTX it’s rounded to 1µs resolution 16-bit values right on arriving.
+Despite that the values are in 100ns resolution, at least in EdgeTX it's rounded to 1µs resolution 16-bit values right on arriving.
 
 ## 0x3C Game
 
@@ -1186,13 +1201,13 @@ Despite that the values are in 100ns resolution, at least in EdgeTX it’s round
 
 **0x7A**
 
-- CRSF frame which wraps MSP request **(‘$M\<’ or ‘$X\<’)**
+- CRSF frame which wraps MSP request **('$M\<' or '$X\<')**
 - Supported by Betaflight devices
 - Supported devices will respond with 0x7B
 
 **0x7B**
 
-- CRSF frame which wraps MSP response **(‘$M>’,’$X>’,‘$M!’,’$X!’)**
+- CRSF frame which wraps MSP response **('$M>','$X>','$M!','$X!')**
 - Supported by Betaflight devices
 - Supported device will send this frame in response of MSP_Request (0x7A)
 
@@ -1200,7 +1215,7 @@ MSP frame over CRSF Payload packing:
 
 - MSP frame is stripped from header ($ + M/X + [/]/!) and CRC
 - Resulted MSP-body might be divided in chunks if it doesn't fit in one CRSF-frame.
-- A ‘Status’ byte is put before MSP-body in each CRSF-frame.
+- A 'Status' byte is put before MSP-body in each CRSF-frame.
 - Status byte consists of three parts:
   - bits 0-3 represent cyclic sequence number of the CRSF frame;
   - bit 4 checks if current MSP chunk is the beginning (or only) of a new frame (1 if true);
@@ -1209,7 +1224,7 @@ MSP frame over CRSF Payload packing:
 - Chunk size of the MSP-body is calculated from size of CRSF frame. But size of the MSP-body must be parsed from the MSP-body itself (with respect to MSP version and Jumbo-frame).
 - The last/only CRSF-frame might be longer than needed. In such a case, the extra bytes must be ignored.
 - Maximum chunk size is defined by maximum length of CRSF frame 64 bytes, therefore, maximum MSP-chunk length is **57** bytes. Minimum chunk length might by anything, but the first chunk must consist of size and function ID (i.e., 5 bytes for MSPv2).
-- CRC of the MSP frame is not sent because it’s already protected by CRC of CRSF. If MSP CRC is needed, it should be calculated at the receiving point.
+- CRC of the MSP frame is not sent because it's already protected by CRC of CRSF. If MSP CRC is needed, it should be calculated at the receiving point.
 - MSP-response must be sent to the origin of the MSP-request. It means that _[destination]_ and _[origin]_ bytes of CRSF-header in response must be the same as in request but swapped.
 
 ## 0x7F ArduPilot Legacy Reserved
