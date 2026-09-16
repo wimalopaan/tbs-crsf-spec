@@ -46,7 +46,7 @@
   - [0x1D Link Statistics TX](#0x1d-link-statistics-tx)
   - [0x1E Attitude](#0x1e-attitude)
   - [0x1F MAVLink FC](#0x1f-mavlink-fc)
-  - [0x20 Digital Channles Packed Payload](#0x20-digital-channels-packed-payload)
+  - [0x20 Digital Channels Packed Payload](#0x20-digital-channels-packed-payload)
   - [0x21 Flight Mode](#0x21-flight-mode)
   - [0x22 ESP_NOW Messages](#0x22-esp_now-messages)
   - [0x27 Reserved](#0x27-reserved)
@@ -628,7 +628,7 @@ same as 0x16, but same conversion style as 0x17
 ## 0x20 Digital Channels Packed Payload
 
 Up to 256 1-bit channels packed in up to 32 bytes. Every byte of the payload (see below) contains 8
-1-bit channels, so the number of 1-bit channels is always a multiple of 8.
+1-bit channels, so the number of valid 1-bit channels transported needs to be a multiple of 8.
 
 In case of a failsafe, this frame will no longer be sent (when the failsafe type is set to "cut").
 
