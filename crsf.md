@@ -624,6 +624,20 @@ same as 0x16, but same conversion style as 0x17
 - [MAV_AUTOPILOT enum](https://mavlink.io/en/messages/common.html#MAV_AUTOPILOT)
 - [MAV_TYPE enum](https://mavlink.io/en/messages/common.html#MAV_TYPE)
 
+## 0x20 Digital Channels Packed Payload
+
+Up to 256 1-bit channels packed in up to 32 bytes. In case of a failsafe, this frame will no longer be sent (when the failsafe type is set to "cut").
+
+
+```cpp
+struct {
+    uint8_t digital_channels[];   // N * 8 channels, 1 bit each, with 1 <= N <= 32
+                                    // bit 0 of byte 0     := channel 1
+                                    // bit 7 of byte (N-1) := channel (N * 8 - 1)
+                                    // 0 = off/low, 1 = on/high
+};
+```
+
 ## 0x21 Flight Mode
 
 ```cpp
