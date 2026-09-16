@@ -46,6 +46,7 @@
   - [0x1D Link Statistics TX](#0x1d-link-statistics-tx)
   - [0x1E Attitude](#0x1e-attitude)
   - [0x1F MAVLink FC](#0x1f-mavlink-fc)
+  - [0x20 Digital Channles Packed Payload](#0x20-digital-channels-packed-payload)
   - [0x21 Flight Mode](#0x21-flight-mode)
   - [0x22 ESP_NOW Messages](#0x22-esp_now-messages)
   - [0x27 Reserved](#0x27-reserved)
